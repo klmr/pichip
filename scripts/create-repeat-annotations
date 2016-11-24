@@ -5,7 +5,7 @@ fix_chromosomes = function (chr)
 sys = modules::import('klmr/sys')
 
 sys$run({
-    args = sys$cmd$parse(arg('annotation', 'Genome annotation file'),
+    args = sys$cmd$parse(arg('annotation', 'Repeat annotation file'),
                          arg('prefix', 'Output path prefix'))
     library(rtracklayer)
     annotation = import(args$annotation)
