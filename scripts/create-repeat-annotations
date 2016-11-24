@@ -1,0 +1,31 @@
+# Chromosome names in our BAM files are different from normal ones.
+fix_chromosomes = function (chr)
+    sub('^chr', 'CHROMOSOME_', chr)
+
+sys = modules::import('klmr/sys')
+
+sys$run({
+    args = sys$cmd$parse(arg('annotation', 'Genome annotation file'),
+                         arg('prefix', 'Output path prefix'))
+    library(rtracklayer)
+    annotation = import(args$annotation)
+    seqlevels(annotation) = fix_chromosomes(seqlevels(annotation))
+
+    repeat_classes = unique(mcols(annotation)$gene_id)
+
+    # For a preliminary analysis, we are going to collapse similar repeat
+    # classes — i.e. those with a common prefix name.
+
+    library(stringr)
+    library(dplyr)
+    class_prefixes = tibble(Class = repeat_classes) %>%
+        mutate(Prefix = str_match(Class, '^[A-Za-z]+')[, 1])
+
+    for (prefix in unique(class_prefixes$Prefix)) {
+        classes = filter(class_prefixes, Prefix == prefix)$Class
+        class_annotation = annotation[mcols(annotation)$gene_id %in% classes]
+        export.bed(class_annotation, paste0(args$prefix, tolower(prefix), '.bed'))
+    }
+})
+
+# vim: ft=r
