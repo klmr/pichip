@@ -18,8 +18,21 @@ sys$run({
 
     library(stringr)
     library(dplyr)
+
+    merge_prefixes = list(c('CELE', 'CELETC'),
+                          c('CEREP', 'CeRep'),
+                          c('HAT', 'HATN'),
+                          c('HELITRON', 'HELITRONY'),
+                          c('TC', 'Tc', 'MARINER', 'MARINCE'),
+                          c('PALTA', 'PALTTAA', 'PALTTTAAA')) %>%
+        tibble(Prefix = ., CollapseTo = sapply(Prefix, `[[`, 1)) %>%
+        tidyr::unnest(Prefix)
+
     class_prefixes = tibble(Class = repeat_classes) %>%
-        mutate(Prefix = str_match(Class, '^[A-Za-z]+')[, 1])
+        mutate(Prefix = str_match(Class, '^[A-Za-z]+')[, 1]) %>%
+        left_join(merge_prefixes, by = 'Prefix') %>%
+        mutate(Prefix = ifelse(is.na(CollapseTo), Prefix, CollapseTo)) %>%
+        select(-CollapseTo)
 
     for (prefix in unique(class_prefixes$Prefix)) {
         classes = filter(class_prefixes, Prefix == prefix)$Class
