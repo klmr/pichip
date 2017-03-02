@@ -24,7 +24,8 @@ data/coverage/%.bg: raw/mapped/%.bam raw/mapped/%.bam.bai ${faidx}
 data/coverage/%.rel_bg: data/coverage/%.bg raw/mapped/%.bam
 	awk ' \
 		BEGIN { \
-			sf='$$(samtools view -F4 -c '$(lastword $^)')' / '$$(awk '{ x += $$2 } END { print x }' ${faidx})' \
+			sf = '$$(samtools view -F4 -c '$(lastword $^)')' / \
+				'$$(awk '{ x += $$2 } END { print x }' ${faidx})' \
 		} \
 		{ \
 			$$4 = $$4 / sf; \
