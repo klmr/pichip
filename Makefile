@@ -12,6 +12,7 @@ raw_files = ${wt_files} ${hrde1_files} ${emb4_files}
 
 cov_files = $(subst raw/mapped/,data/coverage/,${raw_files:.bam=.gc})
 bedgraph_files = $(subst raw/mapped/,data/coverage/,${raw_files:.bam=.bg})
+rel_bg_files = ${bedgraph_files:.bg=.rel_bg}
 
 data/coverage/%.gc: raw/mapped/%.bam raw/mapped/%.bam.bai ${faidx}
 	@$(mkdir)
