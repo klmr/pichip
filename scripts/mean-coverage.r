@@ -9,7 +9,7 @@ load_coverage = function (filenames) {
     f = function (filename)
         import.bedGraph(filename) %>%
         coverage(weight = 'score')
-    lapply(paste0(filenames, '.gc'), f)
+    lapply(filenames, f)
 }
 
 roll_mean_cov = function (genomecov, window) {
@@ -36,7 +36,8 @@ normalize = function (data, input) {
 }
 
 mean_cov = samples %>%
-    mutate(Coverage = load_coverage(File)) %>%
+    mutate(CovFile = file.path('data/coverage', sub('\\.bam$', '.gc', File))) %>%
+    mutate(Coverage = load_coverage(CovFile)) %>%
     mutate(Coverage = lapply(Coverage, roll_mean_cov, window = 50)) %>%
     group_by(Condition, Factor) %>%
     summarize(Coverage = mean_coverage(Coverage)) %>%
