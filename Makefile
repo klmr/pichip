@@ -26,10 +26,12 @@ data/coverage/%.bg: raw/mapped/%.bam raw/mapped/%.bam.bai ${faidx}
 	bedtools genomecov -bg -ibam '$<' -g '$(lastword $^)' > '$@'
 
 data/coverage/%.rel_bg: data/coverage/%.bg raw/mapped/%.bam
+	# Normalize by per-base coverage scaling factor
 	awk -F $$'\t' ' \
 		BEGIN { \
-			sf = '$$(samtools view -F4 -c '$(lastword $^)')' / \
-				'$$(awk '{ x += $$2 } END { print x }' ${faidx})' \
+			covered_bases = '$$(samtools view -F4 '$(lastword $^)' | awk -F $$'\t' '{covered_bases += length($$10)} END {print covered_bases}')'; \
+			genome_length = '$$(awk '{x += $$2} END {print x}' ${faidx})'; \
+			sf = covered_bases / genome_length \
 		} \
 		{ \
 			$$4 = $$4 / sf; \
