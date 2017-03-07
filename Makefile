@@ -1,4 +1,5 @@
 SHELL := $(shell which bash)
+.DELETE_ON_ERROR:
 
 faidx = raw/reference/ce10.chrom.sizes
 
