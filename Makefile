@@ -26,7 +26,7 @@ data/coverage/%.bg: raw/mapped/%.bam raw/mapped/%.bam.bai ${faidx}
 	bedtools genomecov -bg -ibam '$<' -g '$(lastword $^)' > '$@'
 
 data/coverage/%.rel_bg: data/coverage/%.bg raw/mapped/%.bam
-	awk ' \
+	awk -F $$'\t' ' \
 		BEGIN { \
 			sf = '$$(samtools view -F4 -c '$(lastword $^)')' / \
 				'$$(awk '{ x += $$2 } END { print x }' ${faidx})' \
