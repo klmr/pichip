@@ -1,3 +1,5 @@
+SHELL := $(shell which bash)
+
 faidx = raw/reference/ce10.chrom.sizes
 
 bam = $(shell find ./raw/mapped/SX*-$1/ -name '*.bam' -depth 1 -print)
