@@ -53,3 +53,9 @@ data/coverage/%/chip_merged.bg: $$(call chip_replicates,$$*)
 
 data/coverage/%/input_merged.bg: $$(call input_replicates,$$*)
 	./scripts/mean_bedgraph $^ > $@
+
+data/coverage/%.bw: data/coverage/%.bg ${faidx}
+	tmpfile="$$(mktemp)"; \
+	LC_COLLATE=C sort -k1,1 -k2,2n $< > "$$tmpfile"; \
+	trap "rm -f $$tmpfile" EXIT; \
+	bedGraphToBigWig "$$tmpfile" $(lastword $^) $@
