@@ -1,6 +1,9 @@
 SHELL := $(shell which bash)
 .DELETE_ON_ERROR:
 
+keep = $(foreach i,$2,$(if $(findstring $1,$i),$i))
+filter_out = $(foreach i,$2,$(if $(findstring $1,$i),,$i))
+
 faidx = raw/reference/ce10.chrom.sizes
 
 bam = $(shell find ./raw/mapped/SX*-$1/ -name '*.bam' -depth 1 -print)
@@ -38,3 +41,15 @@ data/coverage/%.rel_bg: data/coverage/%.bg raw/mapped/%.bam
 			print $$0 \
 		}' $< \
 	> $@
+
+.SECONDEXPANSION:
+
+replicates = $(shell find ./data/coverage/$1/ -name '*.rel_bg' -print)
+chip_replicates = $(call filter_out,input,$(call replicates,$1))
+input_replicates = $(call keep,input,$(call replicates,$1))
+
+data/coverage/%/chip_merged.bg: $$(call chip_replicates,$$*)
+	bedtools unionbedg $^ > $@
+
+data/coverage/%/input_merged.bg: $$(call input_replicates,$$*)
+	bedtools unionbedg $^ > $@
