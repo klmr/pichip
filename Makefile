@@ -49,7 +49,7 @@ chip_replicates = $(call filter_out,input,$(call replicates,$1))
 input_replicates = $(call keep,input,$(call replicates,$1))
 
 data/coverage/%/chip_merged.bg: $$(call chip_replicates,$$*)
-	bedtools unionbedg $^ > $@
+	./scripts/mean_bedgraph $^ > $@
 
 data/coverage/%/input_merged.bg: $$(call input_replicates,$$*)
-	bedtools unionbedg $^ > $@
+	./scripts/mean_bedgraph $^ > $@
