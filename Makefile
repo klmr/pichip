@@ -48,10 +48,10 @@ replicates = $(shell find ./data/coverage/$1/ -name '*.rel_bg' -print)
 chip_replicates = $(call filter_out,input,$(call replicates,$1))
 input_replicates = $(call keep,input,$(call replicates,$1))
 
-data/coverage/%/chip_merged.bg: $$(call chip_replicates,$$*)
+data/coverage/%_chip_merged.bg: $$(call chip_replicates,$$*)
 	./scripts/mean_bedgraph $^ > $@
 
-data/coverage/%/input_merged.bg: $$(call input_replicates,$$*)
+data/coverage/%_input_merged.bg: $$(call input_replicates,$$*)
 	./scripts/mean_bedgraph $^ > $@
 
 data/coverage/%.bw: data/coverage/%.bg ${faidx}
