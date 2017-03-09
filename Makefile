@@ -45,13 +45,16 @@ replicates = $(call keep,$1,${rel_bg_files})
 chip_replicates = $(call filter_out,input,$(call replicates,$1))
 input_replicates = $(call keep,input,$(call replicates,$1))
 
-data/coverage/%_chip_merged.bedgraph: $$(call chip_replicates,$$*)
+data/coverage/bedgraph/%_chip_merged.bedgraph: $$(call chip_replicates,$$*)
+	@$(mkdir)
 	./scripts/mean_bedgraph $^ > $@
 
-data/coverage/%_input_merged.bedgraph: $$(call input_replicates,$$*)
+data/coverage/bedgraph/%_input_merged.bedgraph: $$(call input_replicates,$$*)
+	@$(mkdir)
 	./scripts/mean_bedgraph $^ > $@
 
-data/coverage/%.bw: data/coverage/%.bedgraph ${faidx}
+data/coverage/bigwig/%.bw: data/coverage/bedgraph/%.bedgraph ${faidx}
+	@$(mkdir)
 	tmpfile="$$(mktemp)"; \
 	LC_COLLATE=C sort -k1,1 -k2,2n $< > "$$tmpfile"; \
 	trap "rm -f $$tmpfile" EXIT; \
