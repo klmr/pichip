@@ -6,15 +6,12 @@ filter_out = $(foreach i,$2,$(if $(findstring $1,$i),,$i))
 
 faidx = raw/reference/ce10.chrom.sizes
 
-bam = $(shell find ./raw/mapped/SX*-$1/ -name '*.bam' -depth 1 -print)
+bam = $(shell find ./raw/mapped/$1/ -name '*.bam' -depth 1 -print)
 
 mkdir = mkdir -p $(dir $@)
 
-wt_files = $(call bam,wt)
-hrde1_files = $(call bam,hrde1)
-emb4_files = $(call bam,emb4)
-
-raw_files = ${wt_files} ${hrde1_files} ${emb4_files}
+conditions = $(notdir $(shell find ./raw/mapped -name 'SX*' -depth 1 -print))
+raw_files = $(foreach c,${conditions},$(call bam,$c))
 
 cov_files = $(subst raw/mapped/,data/coverage/,${raw_files:.bam=.gc})
 bedgraph_files = $(subst raw/mapped/,data/coverage/,${raw_files:.bam=.bedgraph})
