@@ -50,6 +50,7 @@ input_stem = $(addsuffix _input_merged,${conditions})
 all_stem = ${chip_stem} ${input_stem}
 
 bedgraph_files = $(addprefix data/coverage/bedgraph/,$(addsuffix .bedgraph,${all_stem}))
+.PRECIOUS: ${bedgraph_files}
 
 data/coverage/bedgraph/%_chip_merged.bedgraph: $$(call chip_replicates,$$*)
 	@$(mkdir)
@@ -60,6 +61,7 @@ data/coverage/bedgraph/%_input_merged.bedgraph: $$(call input_replicates,$$*)
 	./scripts/mean_bedgraph $^ > $@
 
 bigwig_files = $(addprefix data/coverage/bigwig/,$(addsuffix .bw,${all_stem}))
+.PRECIOUS: ${bigwig_files}
 
 data/coverage/bigwig/%.bw: data/coverage/bedgraph/%.bedgraph ${faidx}
 	@$(mkdir)
