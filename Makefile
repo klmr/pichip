@@ -17,18 +17,18 @@ emb4_files = $(call bam,emb4)
 raw_files = ${wt_files} ${hrde1_files} ${emb4_files}
 
 cov_files = $(subst raw/mapped/,data/coverage/,${raw_files:.bam=.gc})
-bedgraph_files = $(subst raw/mapped/,data/coverage/,${raw_files:.bam=.bg})
-rel_bg_files = ${bedgraph_files:.bg=.rel_bg}
+bedgraph_files = $(subst raw/mapped/,data/coverage/,${raw_files:.bam=.bedgraph})
+rel_bg_files = ${bedgraph_files:.bedgraph=.rel_bg}
 
 data/coverage/%.gc: raw/mapped/%.bam raw/mapped/%.bam.bai ${faidx}
 	@$(mkdir)
 	bedtools genomecov -ibam $< -g $(lastword $^) > $@
 
-data/coverage/%.bg: raw/mapped/%.bam raw/mapped/%.bam.bai ${faidx}
+data/coverage/%.bedgraph: raw/mapped/%.bam raw/mapped/%.bam.bai ${faidx}
 	@$(mkdir)
 	bedtools genomecov -bg -ibam $< -g $(lastword $^) > $@
 
-data/coverage/%.rel_bg: data/coverage/%.bg raw/mapped/%.bam
+data/coverage/%.rel_bg: data/coverage/%.bedgraph raw/mapped/%.bam
 	@# Normalize by per-base coverage scaling factor
 	awk -F $$'\t' -v OFS=$$'\t' ' \
 		BEGIN { \
@@ -48,13 +48,13 @@ replicates = $(shell find ./data/coverage/$1/ -name '*.rel_bg' -print)
 chip_replicates = $(call filter_out,input,$(call replicates,$1))
 input_replicates = $(call keep,input,$(call replicates,$1))
 
-data/coverage/%_chip_merged.bg: $$(call chip_replicates,$$*)
+data/coverage/%_chip_merged.bedgraph: $$(call chip_replicates,$$*)
 	./scripts/mean_bedgraph $^ > $@
 
-data/coverage/%_input_merged.bg: $$(call input_replicates,$$*)
+data/coverage/%_input_merged.bedgraph: $$(call input_replicates,$$*)
 	./scripts/mean_bedgraph $^ > $@
 
-data/coverage/%.bw: data/coverage/%.bg ${faidx}
+data/coverage/%.bw: data/coverage/%.bedgraph ${faidx}
 	tmpfile="$$(mktemp)"; \
 	LC_COLLATE=C sort -k1,1 -k2,2n $< > "$$tmpfile"; \
 	trap "rm -f $$tmpfile" EXIT; \
