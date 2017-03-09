@@ -53,7 +53,7 @@ bedgraph_files = $(addprefix data/coverage/bedgraph/,$(addsuffix .bedgraph,${all
 .PRECIOUS: ${bedgraph_files}
 
 .PHONY: bedgraph-tracks
-## Generate BedGraph tracks for the merged, normalized ChIP and input libraries
+## BedGraph tracks for the merged, normalized ChIP and input libraries
 bedgraph-tracks: ${bedgraph_files}
 
 data/coverage/bedgraph/%_chip_merged.bedgraph: $$(call chip_replicates,$$*)
@@ -68,7 +68,7 @@ bigwig_files = $(addprefix data/coverage/bigwig/,$(addsuffix .bw,${all_stem}))
 .PRECIOUS: ${bigwig_files}
 
 .PHONY: bigwig-tracks
-## Generate BigWig tracks for the merged, normalized ChIP and input libraries
+## BigWig tracks for the merged, normalized ChIP and input libraries
 bigwig-tracks: ${bigwig_files}
 
 data/coverage/bigwig/%.bw: data/coverage/bedgraph/%.bedgraph ${faidx}
@@ -77,6 +77,15 @@ data/coverage/bigwig/%.bw: data/coverage/bedgraph/%.bedgraph ${faidx}
 	LC_COLLATE=C sort -k1,1 -k2,2n $< > "$$tmpfile"; \
 	trap "rm -f $$tmpfile" EXIT; \
 	bedGraphToBigWig "$$tmpfile" $(lastword $^) $@
+
+normalized_bigwig_files = $(addprefix data/coverage/bigwig/,$(addsuffix _merged.bw,${conditions}))
+
+.PHONY: normalized-bigwig-tracks
+## BigWig tracks for the merged ChIP libraries, normalized to input
+normalized-bigwig-tracks: ${normalized_bigwig_files}
+
+data/coverage/bedgraph/%_merged.bedgraph: data/coverage/bedgraph/%_chip_merged.bedgraph data/coverage/bedgraph/%_input_merged.bedgraph
+	./scripts/normalize_to_input --faidx ${faidx} $+ > $@
 
 .DEFAULT_GOAL := show-help
 # See <https://gist.github.com/klmr/575726c7e05d8780505a> for explanation.
