@@ -6,8 +6,9 @@ sys$run({
     library(methods)
     input = commandArgs(trailingOnly = TRUE)
     tracks = do.call(c, lapply(input, rtracklayer::import.bedGraph))
-    sum_coverage = GenomicRanges::GRanges(GenomicRanges::coverage(tracks, weight = GenomicRanges::score(tracks)))
-    GenomicRanges::score(sum_coverage) = GenomicRanges::score(sum_coverage) / length(input)
+    score = GenomicRanges::score
+    sum_coverage = GenomicRanges::GRanges(GenomicRanges::coverage(tracks, weight = score(tracks)))
+    score(sum_coverage) = score(sum_coverage) / length(input)
     rtracklayer::export.bedGraph(sum_coverage, stdout())
 })
 
