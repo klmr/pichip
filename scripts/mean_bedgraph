@@ -7,6 +7,7 @@ sys$run({
     input = commandArgs(trailingOnly = TRUE)
     tracks = do.call(c, lapply(input, rtracklayer::import.bedGraph))
     score = GenomicRanges::score
+    `score<-` = GenomicRanges::`score<-`
     sum_coverage = GenomicRanges::GRanges(GenomicRanges::coverage(tracks, weight = score(tracks)))
     # Numerical instability (?) causes some values to become negative.
     score(sum_coverage[score(sum_coverage) < 0]) = 0
