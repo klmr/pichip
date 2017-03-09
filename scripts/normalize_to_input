@@ -1,0 +1,46 @@
+#!/usr/bin/env Rscript
+
+sys = modules::import('klmr/sys')
+
+sys$run({
+    library(methods)
+    args = sys$cmd$parse(opt('i', 'faidx', 'Fasta index file'),
+                         arg('chip', 'The ChIP BedGraph file'),
+                         arg('input', 'The input BedGraph file'))
+
+    fx = modules::import('klmr/functional')
+
+    # Use these to ensure that Rle objects have the same lengths and can be
+    # divided at the end.
+    seqlengths = read.delim(args$faidx, header = FALSE)$V2
+
+    chip_coverage = args$chip %>%
+        rtracklayer::import.bedGraph() %>%
+        GenomeInfoDb::`seqlengths<-`(seqlengths) %>%
+        GenomicRanges::coverage(weight = GenomicRanges::score(.))
+
+    input_coverage = args$input %>%
+        rtracklayer::import.bedGraph() %>%
+        GenomeInfoDb::`seqlengths<-`(seqlengths) %>%
+        GenomicRanges::coverage(weight = GenomicRanges::score(.)) %>%
+        lapply(as.numeric %|>% fx$p(zoo::rollmean, k = 50, fill = 'extend')) %>%
+        IRanges::RleList()
+
+    # This ensures that no division by zero happens. Interpolation would
+    # arguably be a better strategy; I’m not sure. Also, can this be made more
+    # concise while remaining efficient?
+    run_values = S4Vectors::runValue(input_coverage)
+    run_nulls = run_values == 0
+    min_input_coverage = min(run_values[! run_nulls])
+    run_values[run_nulls] = min_input_coverage
+    S4Vectors::runValue(input_coverage) = run_values
+
+    # FIXME: The memory consumption here is still absolutely crazy.
+    rm(run_values, run_nulls)
+    gc()
+
+    normalized_coverage = chip_coverage / input_coverage
+    rtracklayer::export.bedGraph(normalized_coverage, stdout())
+})
+
+# vim: ft=r
