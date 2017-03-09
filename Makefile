@@ -14,8 +14,8 @@ conditions = $(notdir $(shell find ./raw/mapped -name 'SX*' -depth 1 -print))
 raw_files = $(foreach c,${conditions},$(call bam,$c))
 
 cov_files = $(subst raw/mapped/,data/coverage/,${raw_files:.bam=.gc})
-bedgraph_files = $(subst raw/mapped/,data/coverage/,${raw_files:.bam=.bedgraph})
-rel_bg_files = ${bedgraph_files:.bedgraph=.rel_bg}
+raw_bedgraph_files = $(subst raw/mapped/,data/coverage/,${raw_files:.bam=.bedgraph})
+rel_bg_files = ${raw_bedgraph_files:.bedgraph=.rel_bg}
 
 data/coverage/%.gc: raw/mapped/%.bam raw/mapped/%.bam.bai ${faidx}
 	@$(mkdir)
@@ -45,6 +45,12 @@ replicates = $(call keep,$1,${rel_bg_files})
 chip_replicates = $(call filter_out,input,$(call replicates,$1))
 input_replicates = $(call keep,input,$(call replicates,$1))
 
+chip_stem = $(addsuffix _chip_merged,${conditions})
+input_stem = $(addsuffix _input_merged,${conditions})
+all_stem = ${chip_stem} ${input_stem}
+
+bedgraph_files = $(addprefix data/coverage/bedgraph/,$(addsuffix .bedgraph,${all_stem}))
+
 data/coverage/bedgraph/%_chip_merged.bedgraph: $$(call chip_replicates,$$*)
 	@$(mkdir)
 	./scripts/mean_bedgraph $^ > $@
@@ -52,6 +58,8 @@ data/coverage/bedgraph/%_chip_merged.bedgraph: $$(call chip_replicates,$$*)
 data/coverage/bedgraph/%_input_merged.bedgraph: $$(call input_replicates,$$*)
 	@$(mkdir)
 	./scripts/mean_bedgraph $^ > $@
+
+bigwig_files = $(addprefix data/coverage/bigwig/,$(addsuffix .bw,${all_stem}))
 
 data/coverage/bigwig/%.bw: data/coverage/bedgraph/%.bedgraph ${faidx}
 	@$(mkdir)
