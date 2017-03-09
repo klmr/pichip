@@ -30,7 +30,7 @@ data/coverage/%.bg: raw/mapped/%.bam raw/mapped/%.bam.bai ${faidx}
 
 data/coverage/%.rel_bg: data/coverage/%.bg raw/mapped/%.bam
 	@# Normalize by per-base coverage scaling factor
-	awk -F $$'\t' ' \
+	awk -F $$'\t' -v OFS=$$'\t' ' \
 		BEGIN { \
 			covered_bases = '$$(samtools view -F4 '$(lastword $^)' | awk -F $$'\t' '{covered_bases += length($$10)} END {print covered_bases}')'; \
 			genome_length = '$$(awk '{x += $$2} END {print x}' ${faidx})'; \
