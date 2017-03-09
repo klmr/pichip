@@ -52,6 +52,10 @@ all_stem = ${chip_stem} ${input_stem}
 bedgraph_files = $(addprefix data/coverage/bedgraph/,$(addsuffix .bedgraph,${all_stem}))
 .PRECIOUS: ${bedgraph_files}
 
+.PHONY: bedgraph-tracks
+## Generate BedGraph tracks for the merged, normalized ChIP and input libraries
+bedgraph-tracks: ${bedgraph_files}
+
 data/coverage/bedgraph/%_chip_merged.bedgraph: $$(call chip_replicates,$$*)
 	@$(mkdir)
 	./scripts/mean_bedgraph $^ > $@
@@ -62,6 +66,10 @@ data/coverage/bedgraph/%_input_merged.bedgraph: $$(call input_replicates,$$*)
 
 bigwig_files = $(addprefix data/coverage/bigwig/,$(addsuffix .bw,${all_stem}))
 .PRECIOUS: ${bigwig_files}
+
+.PHONY: bigwig-tracks
+## Generate BigWig tracks for the merged, normalized ChIP and input libraries
+bigwig-tracks: ${bigwig_files}
 
 data/coverage/bigwig/%.bw: data/coverage/bedgraph/%.bedgraph ${faidx}
 	@$(mkdir)
