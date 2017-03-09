@@ -41,7 +41,7 @@ data/coverage/%.rel_bg: data/coverage/%.bedgraph raw/mapped/%.bam
 
 .SECONDEXPANSION:
 
-replicates = $(shell find ./data/coverage/$1/ -name '*.rel_bg' -print)
+replicates = $(call keep,$1,${rel_bg_files})
 chip_replicates = $(call filter_out,input,$(call replicates,$1))
 input_replicates = $(call keep,input,$(call replicates,$1))
 
