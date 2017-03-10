@@ -84,6 +84,9 @@ normalized_bigwig_files = $(addprefix data/coverage/bigwig/,$(addsuffix _merged.
 ## BigWig tracks for the merged ChIP libraries, normalized to input
 normalized-bigwig-tracks: ${normalized_bigwig_files}
 
+normalized_bedgraph_files = $(addprefix data/coverage/bedgraph/,$(addsuffix _merged.bedgraph,${conditions}))
+.PRECIOUS: ${normalized_bedgraph_files}
+
 data/coverage/bedgraph/%_merged.bedgraph: data/coverage/bedgraph/%_chip_merged.bedgraph data/coverage/bedgraph/%_input_merged.bedgraph
 	./scripts/normalize_to_input --faidx ${faidx} $+ > $@
 
