@@ -39,7 +39,9 @@ sys$run({
     rm(run_values, run_nulls)
     gc()
 
-    normalized_coverage = chip_coverage / input_coverage
+    normalized_coverage = GenomicRanges::GRanges(chip_coverage / input_coverage)
+    rm(chip_coverage, input_coverage)
+    gc()
     rtracklayer::export.bedGraph(normalized_coverage, stdout())
 })
 
