@@ -37,6 +37,7 @@ sys$run({
     for (prefix in unique(class_prefixes$Prefix)) {
         classes = filter(class_prefixes, Prefix == prefix)$Class
         class_annotation = annotation[mcols(annotation)$gene_id %in% classes]
+        mcols(class_annotation)$name = make.unique(mcols(class_annotation)$transcript_id)
         export.bed(class_annotation, paste0(args$prefix, tolower(prefix), '.bed'))
     }
 })
