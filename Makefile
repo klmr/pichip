@@ -78,6 +78,23 @@ data/coverage/bigwig/%.bw: data/coverage/bedgraph/%.bedgraph ${faidx}
 	trap "rm -f $$tmpfile" EXIT; \
 	bedGraphToBigWig "$$tmpfile" $(lastword $^) $@
 
+bam_files = $(call keep,$1,${raw_files})
+chip_bam_files = $(call filter_out,input,$(call bam_files,$1))
+input_bam_files = $(call keep,input,$(call bam_files,$1))
+
+data/peaks/%_peaks.bw: $$(call bam_files,$$(dir $$*)) ${faidx}
+	macs2 callpeak --broad --treatment $(call chip_bam_files,$(dir $*)) --control $(call input_bam_files,$(dir $*)) --name $(notdir $*) --format BAM --outdir $(dir $@) --bdg
+	tmpfile="$$(mktemp)"; \
+	LC_COLLATE=C sort -k1,1 -k2,2n $(@:_peaks.bw=_treat_pileup.bdg) > "$$tmpfile"; \
+	trap "rm -f $$tmpfile" EXIT; \
+	bedGraphToBigWig "$$tmpfile" $(lastword $^) $@
+
+macs2_peaks = $(foreach c,${conditions},data/peaks/$c/$c_peaks.bw)
+
+.PHONY: call-peaks
+## Call ChIP peaks using macs2
+call-peaks: ${macs2_peaks}
+
 normalized_bigwig_files = $(addprefix data/coverage/bigwig/,$(addsuffix _merged.bw,${conditions}))
 
 .PHONY: normalized-bigwig-tracks
