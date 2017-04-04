@@ -27,16 +27,9 @@ sys$run({
         IRanges::RleList()
 
     # This ensures that no division by zero happens. Interpolation would
-    # arguably be a better strategy; I’m not sure. Also, can this be made more
-    # concise while remaining efficient?
-    run_values = S4Vectors::runValue(input_coverage)
-    run_nulls = run_values == 0
-    min_input_coverage = min(run_values[! run_nulls])
-    run_values[run_nulls] = min_input_coverage
-    S4Vectors::runValue(input_coverage) = run_values
-
-    # FIXME: The memory consumption here is still absolutely crazy.
-    rm(run_values, run_nulls)
+    # arguably be a better strategy; I’m not sure.
+    run_nulls = input_coverage <= 0
+    input_coverage[run_nulls] = as.list(min(input_coverage[! run_nulls]))
     gc()
 
     normalized_coverage = GenomicRanges::GRanges(chip_coverage / input_coverage)
