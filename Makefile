@@ -95,6 +95,33 @@ macs2_peaks = $(foreach c,${conditions},data/peaks/$c/$c_peaks.bw)
 ## Call ChIP peaks using macs2
 call-peaks: ${macs2_peaks}
 
+# FIXME: Narrow peaks used for subsequent analysis, but above command created broad peaks.
+macs2_narrow_peaks = $(foreach c,${conditions},data/peaks-narrow/$c/$c_peaks.bw)
+
+peak_prefixes = $(subst _peaks.bw,,$(call filter_out,wt,${macs2_narrow_peaks}))
+peak_treatment = $(call keep,$1,$(addsuffix _treat_pileup.bdg,${peak_prefixes}))
+peak_control = $(call keep,$1,$(addsuffix _control_lambda.bdg,${peak_prefixes}))
+all_peak_files = $(call peak_treatment,$1) $(call peak_control,$1)
+
+get_eff_seq_depth = $(shell grep 'tags after filtering in \(treatment\|control\)' ${1:_treat_pileup.bdg=_peaks.xls} | grep -o '[[:digit:]]\+' | sort -n | head -1)
+
+data/differential-peaks/%_common.bed: $$(call all_peak_files,$$(dir $$*))
+	@$(mkdir)
+	$(eval d1 := $(call get_eff_seq_depth,./data/peaks-narrow/SX1316-wt/SX1361-wt_treat_pileup.bdg))
+	$(eval d2 := $(call get_eff_seq_depth,$<))
+	macs2 bdgdiff \
+		--t1 ./data/peaks-narrow/SX1316-wt/SX1361-wt_treat_pileup.bdg \
+		--c1 ./data/peaks-narrow/SX1316-wt/SX1361-wt_control_lambda.bdg \
+		--t2 $(firstword $+) --c2 $(lastword $+) \
+		--d1 ${d1} --d2 ${d2} -g 120 -l 150 --outdir $(dir $@) \
+		-o $(notdir ${@:common.bed=down.bed} ${@:common.bed=up.bed} $@)
+
+differential_peaks = $(foreach c,$(call filter_out,wt,${conditions}),data/differential-peaks/$c/diff_wt-vs-$c_common.bed)
+
+.PHONY: differential-peaks
+## Call differential ChIP-seq peaks
+differential-peaks: ${differential_peaks}
+
 normalized_bigwig_files = $(addprefix data/coverage/bigwig/,$(addsuffix _merged.bw,${conditions}))
 
 .PHONY: normalized-bigwig-tracks
