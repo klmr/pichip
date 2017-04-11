@@ -113,7 +113,7 @@ data/differential-peaks/%_common.bed: $$(call all_peak_files,$$(dir $$*))
 		--t1 ./data/peaks-narrow/SX1316-wt/SX1361-wt_treat_pileup.bdg \
 		--c1 ./data/peaks-narrow/SX1316-wt/SX1361-wt_control_lambda.bdg \
 		--t2 $(firstword $+) --c2 $(lastword $+) \
-		--d1 ${d1} --d2 ${d2} -g 120 -l 150 --outdir $(dir $@) \
+		--d1 ${d1} --d2 ${d2} -g 100 -l 500 --outdir $(dir $@) \
 		-o $(notdir ${@:common.bed=down.bed} ${@:common.bed=up.bed} $@)
 
 differential_peaks = $(foreach c,$(call filter_out,wt,${conditions}),data/differential-peaks/$c/diff_wt-vs-$c_common.bed)
