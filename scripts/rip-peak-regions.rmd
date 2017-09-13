@@ -92,7 +92,8 @@ overlaps = gr$findOverlaps(hrde1_peaks, annotation) %>%
 Some hrde-1 peaks were unmapped. Save these.
 
 ```{r save-unmapped-peaks}
-rtl$export.bed(hrde1_peaks[- unique(overlaps$Query)], 'data/unmapped-peaks-hrde1.bed')
+peaks_unmapped = hrde1_peaks[- unique(overlaps$Query)]
+rtl$export.bed(peaks_unmapped, 'data/unmapped-peaks-hrde1.bed')
 ```
 
 Check whether all hits overlap with introns:
