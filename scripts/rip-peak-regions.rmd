@@ -1,0 +1,118 @@
+# Analyse the RIP-seq peak regions
+
+There’s a suspicion that all peaks called form the RIP-seq RNA data fall on or
+across intronic regions on protein-coding genes. This is definitely true for
+the wildtype data. Here we test whether the same is true for the (many more)
+hrde-1 peaks.
+
+```{r libraries, message=FALSE}
+rtl = modules::import_package('rtracklayer')
+gid = modules::import_package('GenomeInfoDb') 
+dbi = modules::import_package('AnnotationDbi')
+gr = modules::import_package('GenomicRanges')
+ir = modules::import_package('IRanges')
+modules::import('mutate_when', attach = TRUE)
+modules::import_package('dplyr', attach = TRUE)
+tidyr = modules::import_package('tidyr')
+txdb = TxDb.Celegans.UCSC.ce11.refGene::TxDb.Celegans.UCSC.ce11.refGene
+```
+
+```{r load-data}
+set_seqlevels = gid$`seqlevels<-`
+hrde1_peaks = rtl$import.bed('raw/rip-de/diff_hrde1_vs_control_c3.0_cond1.bed') %>%
+    set_seqlevels(value = sub('CHROMOSOME_', 'chr', gid$seqlevels(.)))
+```
+
+```{r exondata}
+cols = c(
+    Gene = 'GENEID',
+    Exon = 'EXONID',
+    Chr = 'EXONCHROM',
+    Start = 'EXONSTART',
+    End = 'EXONEND'
+)
+
+exons = txdb %>%
+    dbi$select(
+        columns = cols,
+        keys = dbi$keys(., 'GENEID'),
+        keytype = 'GENEID'
+    ) %>%
+    rename(!!! cols)
+```
+
+We are also interested in introns. Let’s add these as additional annotations:
+
+```{r introns}
+introns_between = function (exons) {
+    if (nrow(exons) == 1) {
+        tibble(
+            Start = integer(),
+            End = integer()
+        )
+    } else {
+        tibble(
+            Start = lag(exons$End, default = NULL) + 1L,
+            End = lead(exons$Start, default = NULL) - 1L
+        )
+    }
+}
+
+introns = exons %>%
+    group_by(Gene, Chr) %>%
+    tidyr$nest() %>%
+    mutate(data = lapply(data, introns_between)) %>%
+    tidyr$unnest() %>%
+    tibble::add_column(Exon = NA_character_, .after = 1)
+```
+
+Combine exons and introns into an annotation, and make a `GRanges` from it. This
+allows efficient querying.
+
+```{r annotation}
+annotation = bind_rows(exons, introns) %>%
+    arrange(Chr, Gene, Start) %>%
+    mutate(Strand = ifelse(Start < End, '+', '-')) %>%
+    mutate_when(Strand == '-', Start = End, End = Start) %>%
+    with(gr$GRanges(
+        Chr,
+        ir$IRanges(Start, End, names = Gene),
+        strand = Strand,
+        exon = is.na(Exon))
+    )
+```
+
+With this, let’s find the regions present in our hrde-1 data:
+
+```{r overlaps}
+overlaps = gr$findOverlaps(hrde1_peaks, annotation) %>%
+    {tibble(Query = S4Vectors::from(.), Subject = S4Vectors::to(.))}
+```
+
+Some hrde-1 peaks were unmapped. Save these.
+
+```{r save-unmapped-peaks}
+rtl$export.bed(hrde1_peaks[- unique(overlaps$Query)], 'data/unmapped-peaks-hrde1.bed')
+```
+
+Check whether all hits overlap with introns:
+
+```{r overlap-with-introns}
+intron_overlaps = overlaps %>%
+    group_by(Query) %>%
+    mutate(Exon = annotation[Subject]$exon) %>%
+    summarize(HasExon = any(Exon))
+
+table(intron_overlaps$HasExon)
+```
+
+Save the peaks without intron overlap:
+
+```{r save-peaks-no-intron}
+peaks_without_intron = intron_overlaps %>%
+    filter(! HasExon) %>%
+    with(unique(Query)) %>%
+    hrde1_peaks[.]
+
+rtl$export.bed(peaks_without_intron, 'data/peaks-without-introns-hrde1.bed')
+```
