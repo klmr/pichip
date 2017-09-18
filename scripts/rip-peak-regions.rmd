@@ -66,6 +66,14 @@ introns = exons %>%
     tibble::add_column(Exon = NA_character_, .after = 1)
 ```
 
+```{r echo=FALSE}
+introns %>%
+    select(-Exon) %>%
+    mutate(Gene = make.unique(Gene, sep = '_')) %>%
+    write.table('data/ce11-introns.bed', quote = FALSE, sep = '\t',
+                row.names = FALSE, col.names = FALSE)
+```
+
 Combine exons and introns into an annotation, and make a `GRanges` from it. This
 allows efficient querying.
 
